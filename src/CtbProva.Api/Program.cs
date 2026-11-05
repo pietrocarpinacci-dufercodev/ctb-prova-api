@@ -11,6 +11,8 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapGet("/api/todos", (TodoStore store) => store.All());
 
+app.MapGet("/api/todos/count", (TodoStore store) => Results.Ok(new { count = store.Count() }));
+
 app.MapGet("/api/todos/{id:int}", (int id, TodoStore store) =>
     store.Find(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
 
@@ -40,6 +42,8 @@ public sealed class TodoStore
     private int _lastId;
 
     public IReadOnlyList<Todo> All() => _items.Values.OrderBy(t => t.Id).ToList();
+
+    public int Count() => _items.Count;
 
     public Todo? Find(int id) => _items.TryGetValue(id, out var todo) ? todo : null;
 
