@@ -6,4 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DufercoDev.BaseApiLibraries.Logging" Version="10.0.4" />
+  </ItemGroup>
+
 </Project>
