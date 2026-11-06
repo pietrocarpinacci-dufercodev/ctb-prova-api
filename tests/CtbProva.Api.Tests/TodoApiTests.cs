@@ -43,6 +43,28 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Deleted_todo_is_returned_and_no_longer_readable()
+    {
+        var client = factory.CreateClient();
+        var created = await client.PostAsJsonAsync("/api/todos", new { title = "da eliminare" });
+        var todo = await created.Content.ReadFromJsonAsync<Todo>();
+
+        var deleted = await client.DeleteAsync($"/api/todos/{todo!.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
+        Assert.Equal(todo, await deleted.Content.ReadFromJsonAsync<Todo>());
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/todos/{todo.Id}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Deleting_unknown_todo_returns_not_found()
+    {
+        var response = await factory.CreateClient().DeleteAsync("/api/todos/9999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Unknown_todo_returns_not_found()
     {
         var response = await factory.CreateClient().GetAsync("/api/todos/9999");
