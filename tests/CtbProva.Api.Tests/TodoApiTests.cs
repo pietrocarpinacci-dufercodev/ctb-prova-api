@@ -51,7 +51,9 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
 
         var deleted = await client.DeleteAsync($"/api/todos/{todo!.Id}");
 
-        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, deleted.StatusCode);
+        var removed = await deleted.Content.ReadFromJsonAsync<Todo>();
+        Assert.Equal(todo, removed);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/todos/{todo.Id}")).StatusCode);
         var all = await client.GetFromJsonAsync<List<Todo>>("/api/todos");
         Assert.DoesNotContain(all!, t => t.Id == todo.Id);

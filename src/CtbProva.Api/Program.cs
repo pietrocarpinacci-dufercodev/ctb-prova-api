@@ -29,7 +29,7 @@ app.MapPost("/api/todos/{id:int}/done", (int id, TodoStore store) =>
     store.MarkDone(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
 
 app.MapDelete("/api/todos/{id:int}", (int id, TodoStore store) =>
-    store.Remove(id) ? Results.NoContent() : Results.NotFound());
+    store.Remove(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
 
 app.Run();
 
@@ -53,7 +53,7 @@ public sealed class TodoStore
         return todo;
     }
 
-    public bool Remove(int id) => _items.TryRemove(id, out _);
+    public Todo? Remove(int id) => _items.TryRemove(id, out var todo) ? todo : null;
 
     public Todo? MarkDone(int id)
     {

@@ -13,7 +13,7 @@ Piccola Web API .NET 10 per la prova end-to-end di claude-teams-bridge. Gestisce
 | GET | `/api/todos/{id}` | una cosa da fare, 404 se non esiste |
 | POST | `/api/todos` | crea una cosa da fare (`{ "title": "..." }`), 400 se il titolo è vuoto |
 | POST | `/api/todos/{id}/done` | segna una cosa come fatta |
-| DELETE | `/api/todos/{id}` | rimuove una cosa da fare, 204 se rimossa, 404 se non esiste |
+| DELETE | `/api/todos/{id}` | rimuove una cosa da fare, 200 con la cosa rimossa nel corpo, 404 se non esiste |
 
 ## Comandi
 
