@@ -11,6 +11,8 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapGet("/api/todos", (TodoStore store) => store.All());
 
+app.MapGet("/api/todos/count", (TodoStore store) => Results.Ok(new { count = store.Count }));
+
 app.MapGet("/api/todos/{id:int}", (int id, TodoStore store) =>
     store.Find(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
 
@@ -38,6 +40,8 @@ public sealed class TodoStore
 {
     private readonly ConcurrentDictionary<int, Todo> _items = new();
     private int _lastId;
+
+    public int Count => _items.Count;
 
     public IReadOnlyList<Todo> All() => _items.Values.OrderBy(t => t.Id).ToList();
 

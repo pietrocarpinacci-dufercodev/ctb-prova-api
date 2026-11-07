@@ -35,6 +35,20 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Count_grows_by_one_after_creating_a_todo()
+    {
+        var client = factory.CreateClient();
+
+        var before = await client.GetFromJsonAsync<CountResponse>("/api/todos/count");
+        await client.PostAsJsonAsync("/api/todos", new { title = "contami" });
+        var after = await client.GetFromJsonAsync<CountResponse>("/api/todos/count");
+
+        Assert.Equal(before!.Count + 1, after!.Count);
+    }
+
+    private record CountResponse(int Count);
+
+    [Fact]
     public async Task Empty_title_is_rejected()
     {
         var response = await factory.CreateClient().PostAsJsonAsync("/api/todos", new { title = " " });
