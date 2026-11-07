@@ -10,6 +10,7 @@ Piccola Web API .NET 10 per la prova end-to-end di claude-teams-bridge. Gestisce
 | --- | --- | --- |
 | GET | `/api/health` | stato del servizio |
 | GET | `/api/todos` | elenco delle cose da fare |
+| GET | `/api/todos/count` | numero di cose da fare (`{ "count": 3 }`) |
 | GET | `/api/todos/{id}` | una cosa da fare, 404 se non esiste |
 | POST | `/api/todos` | crea una cosa da fare (`{ "title": "..." }`), 400 se il titolo è vuoto |
 | POST | `/api/todos/{id}/done` | segna una cosa come fatta |
