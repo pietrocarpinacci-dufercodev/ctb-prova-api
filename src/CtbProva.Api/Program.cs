@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<TodoStore>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
@@ -10,6 +11,9 @@ app.UseCors();
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapGet("/api/todos", (TodoStore store) => store.All());
+
+app.MapGet("/api/todos/overdue", (TodoStore store, TimeProvider time) =>
+    store.Overdue(DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)));
 
 app.MapGet("/api/todos/{id:int}", (int id, TodoStore store) =>
     store.Find(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
@@ -21,7 +25,7 @@ app.MapPost("/api/todos", (NewTodo input, TodoStore store) =>
         return Results.ValidationProblem(new Dictionary<string, string[]> { ["title"] = ["Il titolo è obbligatorio."] });
     }
 
-    var todo = store.Add(input.Title.Trim());
+    var todo = store.Add(input.Title.Trim(), input.DueDate);
     return Results.Created($"/api/todos/{todo.Id}", todo);
 });
 
@@ -30,9 +34,9 @@ app.MapPost("/api/todos/{id:int}/done", (int id, TodoStore store) =>
 
 app.Run();
 
-public record Todo(int Id, string Title, bool Done);
+public record Todo(int Id, string Title, bool Done, DateOnly? DueDate);
 
-public record NewTodo(string? Title);
+public record NewTodo(string? Title, DateOnly? DueDate);
 
 public sealed class TodoStore
 {
@@ -43,9 +47,12 @@ public sealed class TodoStore
 
     public Todo? Find(int id) => _items.TryGetValue(id, out var todo) ? todo : null;
 
-    public Todo Add(string title)
+    public IReadOnlyList<Todo> Overdue(DateOnly today) =>
+        All().Where(t => !t.Done && t.DueDate < today).OrderBy(t => t.DueDate).ThenBy(t => t.Id).ToList();
+
+    public Todo Add(string title, DateOnly? dueDate)
     {
-        var todo = new Todo(Interlocked.Increment(ref _lastId), title, false);
+        var todo = new Todo(Interlocked.Increment(ref _lastId), title, false, dueDate);
         _items[todo.Id] = todo;
         return todo;
     }
