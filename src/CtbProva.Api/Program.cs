@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<TodoStore>();
@@ -9,7 +10,10 @@ app.UseCors();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapGet("/api/todos", (TodoStore store) => store.All());
+app.MapGet("/api/todos", (string? priority, TodoStore store) =>
+    priority is not null && !Priorities.IsValid(priority)
+        ? PriorityError()
+        : Results.Ok(store.All().Where(t => priority is null || t.Priority == priority)));
 
 app.MapGet("/api/todos/{id:int}", (int id, TodoStore store) =>
     store.Find(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
@@ -21,18 +25,47 @@ app.MapPost("/api/todos", (NewTodo input, TodoStore store) =>
         return Results.ValidationProblem(new Dictionary<string, string[]> { ["title"] = ["Il titolo è obbligatorio."] });
     }
 
-    var todo = store.Add(input.Title.Trim());
+    var priority = Priorities.Default;
+    if (input.Priority.ValueKind != JsonValueKind.Undefined && !Priorities.TryParse(input.Priority, out priority))
+    {
+        return PriorityError();
+    }
+
+    var todo = store.Add(input.Title.Trim(), priority);
     return Results.Created($"/api/todos/{todo.Id}", todo);
 });
 
 app.MapPost("/api/todos/{id:int}/done", (int id, TodoStore store) =>
     store.MarkDone(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
 
+app.MapPut("/api/todos/{id:int}/priority", (int id, PriorityChange input, TodoStore store) =>
+    !Priorities.TryParse(input.Priority, out var priority) ? PriorityError()
+    : store.SetPriority(id, priority) is { } todo ? Results.Ok(todo) : Results.NotFound());
+
+static IResult PriorityError() =>
+    Results.ValidationProblem(new Dictionary<string, string[]> { ["priority"] = ["Valori ammessi: bassa, media, alta."] });
+
 app.Run();
 
-public record Todo(int Id, string Title, bool Done);
+public record Todo(int Id, string Title, bool Done, string Priority);
 
-public record NewTodo(string? Title);
+// JsonElement e non string?: distingue il campo assente (Undefined) dal null esplicito.
+public record NewTodo(string? Title, JsonElement Priority);
+
+public record PriorityChange(JsonElement Priority);
+
+public static class Priorities
+{
+    public const string Default = "media";
+
+    public static bool IsValid(string? value) => value is "bassa" or "media" or "alta";
+
+    public static bool TryParse(JsonElement element, out string priority)
+    {
+        priority = element.ValueKind == JsonValueKind.String ? element.GetString()! : "";
+        return IsValid(priority);
+    }
+}
 
 public sealed class TodoStore
 {
@@ -43,11 +76,23 @@ public sealed class TodoStore
 
     public Todo? Find(int id) => _items.TryGetValue(id, out var todo) ? todo : null;
 
-    public Todo Add(string title)
+    public Todo Add(string title, string priority)
     {
-        var todo = new Todo(Interlocked.Increment(ref _lastId), title, false);
+        var todo = new Todo(Interlocked.Increment(ref _lastId), title, false, priority);
         _items[todo.Id] = todo;
         return todo;
+    }
+
+    public Todo? SetPriority(int id, string priority)
+    {
+        if (!_items.TryGetValue(id, out var todo))
+        {
+            return null;
+        }
+
+        var changed = todo with { Priority = priority };
+        _items[id] = changed;
+        return changed;
     }
 
     public Todo? MarkDone(int id)
