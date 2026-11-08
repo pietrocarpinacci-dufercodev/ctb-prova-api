@@ -98,10 +98,13 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         await Add("senza data", null);
         var donePast = await Add("fatto", today.AddDays(-5));
         await client.PostAsync($"/api/todos/{donePast.Id}/done", null);
+        var older = await Add("più vecchio, creato dopo", today.AddDays(-3));
+        var samePastLater = await Add("stessa data, creato dopo", today.AddDays(-1));
 
         var overdue = await client.GetFromJsonAsync<List<Todo>>("/api/todos/overdue");
 
-        Assert.Equal([past.Id], overdue!.Select(t => t.Id));
+        // per scadenza crescente, a parità di data per id
+        Assert.Equal([older.Id, past.Id, samePastLater.Id], overdue!.Select(t => t.Id));
     }
 
     private sealed class FixedTime(DateTimeOffset now) : TimeProvider

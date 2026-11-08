@@ -10,7 +10,7 @@ Piccola Web API .NET 10 per la prova end-to-end di claude-teams-bridge. Gestisce
 | --- | --- | --- |
 | GET | `/api/health` | stato del servizio |
 | GET | `/api/todos` | elenco delle cose da fare |
-| GET | `/api/todos/overdue` | cose da fare non completate con `dueDate` precedente a oggi (data UTC del server) |
+| GET | `/api/todos/overdue` | cose da fare non completate con `dueDate` precedente a oggi (data UTC del server), per scadenza crescente e a parità di data per id |
 | GET | `/api/todos/{id}` | una cosa da fare, 404 se non esiste |
 | POST | `/api/todos` | crea una cosa da fare (`{ "title": "...", "dueDate": "yyyy-MM-dd" }`, `dueDate` facoltativa), 400 se il titolo è vuoto o la data non è valida |
 | POST | `/api/todos/{id}/done` | segna una cosa come fatta |

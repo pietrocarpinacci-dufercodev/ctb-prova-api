@@ -48,7 +48,7 @@ public sealed class TodoStore
     public Todo? Find(int id) => _items.TryGetValue(id, out var todo) ? todo : null;
 
     public IReadOnlyList<Todo> Overdue(DateOnly today) =>
-        All().Where(t => !t.Done && t.DueDate < today).ToList();
+        All().Where(t => !t.Done && t.DueDate < today).OrderBy(t => t.DueDate).ThenBy(t => t.Id).ToList();
 
     public Todo Add(string title, DateOnly? dueDate)
     {
