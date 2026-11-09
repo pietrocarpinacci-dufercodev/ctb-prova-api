@@ -49,4 +49,71 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Priority_defaults_to_media_and_can_be_set_on_creation()
+    {
+        var client = factory.CreateClient();
+
+        var def = await (await client.PostAsJsonAsync("/api/todos", new { title = "a" })).Content.ReadFromJsonAsync<Todo>();
+        Assert.Equal("media", def!.Priority);
+
+        var high = await (await client.PostAsJsonAsync("/api/todos", new { title = "b", priority = "ALTA" })).Content.ReadFromJsonAsync<Todo>();
+        Assert.Equal("alta", high!.Priority);
+    }
+
+    [Fact]
+    public async Task Invalid_priority_is_rejected_on_creation()
+    {
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/todos", new { title = "x", priority = "urgente" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Invalid_priority_on_creation_reports_the_field_and_creates_nothing()
+    {
+        var client = factory.CreateClient();
+        var before = (await client.GetFromJsonAsync<List<Todo>>("/api/todos"))!.Count;
+
+        var response = await client.PostAsJsonAsync("/api/todos", new { title = "non creare", priority = "urgente" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("\"priority\"", await response.Content.ReadAsStringAsync());
+        var after = await client.GetFromJsonAsync<List<Todo>>("/api/todos");
+        Assert.Equal(before, after!.Count);
+        Assert.DoesNotContain(after, t => t.Title == "non creare");
+    }
+
+    [Fact]
+    public async Task Priority_can_be_changed_with_dedicated_endpoint()
+    {
+        var client = factory.CreateClient();
+        var todo = await (await client.PostAsJsonAsync("/api/todos", new { title = "c" })).Content.ReadFromJsonAsync<Todo>();
+
+        var ok = await client.PutAsJsonAsync($"/api/todos/{todo!.Id}/priority", new { priority = "bassa" });
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+        Assert.Equal("bassa", (await client.GetFromJsonAsync<Todo>($"/api/todos/{todo.Id}"))!.Priority);
+
+        var bad = await client.PutAsJsonAsync($"/api/todos/{todo.Id}/priority", new { priority = "boh" });
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+
+        var missing = await client.PutAsJsonAsync("/api/todos/9999/priority", new { priority = "alta" });
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+    }
+
+    [Fact]
+    public async Task List_can_be_filtered_by_priority()
+    {
+        var client = factory.CreateClient();
+        var low = await (await client.PostAsJsonAsync("/api/todos", new { title = "d", priority = "bassa" })).Content.ReadFromJsonAsync<Todo>();
+
+        var filtered = await client.GetFromJsonAsync<List<Todo>>("/api/todos?priority=bassa");
+        Assert.NotEmpty(filtered!);
+        Assert.All(filtered, t => Assert.Equal("bassa", t.Priority));
+        Assert.Contains(filtered, t => t.Id == low!.Id);
+
+        var bad = await client.GetAsync("/api/todos?priority=boh");
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+    }
 }
