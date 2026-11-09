@@ -71,6 +71,21 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Invalid_priority_on_creation_reports_the_field_and_creates_nothing()
+    {
+        var client = factory.CreateClient();
+        var before = (await client.GetFromJsonAsync<List<Todo>>("/api/todos"))!.Count;
+
+        var response = await client.PostAsJsonAsync("/api/todos", new { title = "non creare", priority = "urgente" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("\"priority\"", await response.Content.ReadAsStringAsync());
+        var after = await client.GetFromJsonAsync<List<Todo>>("/api/todos");
+        Assert.Equal(before, after!.Count);
+        Assert.DoesNotContain(after, t => t.Title == "non creare");
+    }
+
+    [Fact]
     public async Task Priority_can_be_changed_with_dedicated_endpoint()
     {
         var client = factory.CreateClient();
