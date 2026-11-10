@@ -7,7 +7,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAn
 var app = builder.Build();
 app.UseCors();
 
-app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/api/health", () => Results.Ok(new { status = "ok", dotnetVersion = Environment.Version.ToString() }));
 
 app.MapGet("/api/todos", (TodoStore store) => store.All());
 
