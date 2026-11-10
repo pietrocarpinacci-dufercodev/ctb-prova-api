@@ -12,6 +12,9 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         var response = await factory.CreateClient().GetAsync("/api/health");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        Assert.Equal("ok", body.GetProperty("status").GetString());
+        Assert.Equal(Environment.Version.ToString(), body.GetProperty("dotnetVersion").GetString());
     }
 
     [Fact]

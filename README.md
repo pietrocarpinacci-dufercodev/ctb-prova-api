@@ -8,7 +8,7 @@ Piccola Web API .NET 10 per la prova end-to-end di claude-teams-bridge. Gestisce
 
 | Metodo | Percorso | Cosa fa |
 | --- | --- | --- |
-| GET | `/api/health` | stato del servizio |
+| GET | `/api/health` | stato del servizio: `{ "status": "ok", "dotnetVersion": "<versione .NET>" }` |
 | GET | `/api/todos` | elenco delle cose da fare |
 | GET | `/api/todos/{id}` | una cosa da fare, 404 se non esiste |
 | POST | `/api/todos` | crea una cosa da fare (`{ "title": "..." }`), 400 se il titolo è vuoto |
