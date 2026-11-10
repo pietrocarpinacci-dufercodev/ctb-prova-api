@@ -80,6 +80,17 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Invalid_priority_on_create_does_not_create_the_todo()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/todos", new { title = "mai-creato", priority = "urgente" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.DoesNotContain(await client.GetFromJsonAsync<List<Todo>>("/api/todos") ?? [], t => t.Title == "mai-creato");
+    }
+
+    [Fact]
     public async Task Priority_is_present_on_get_and_done()
     {
         var client = factory.CreateClient();
