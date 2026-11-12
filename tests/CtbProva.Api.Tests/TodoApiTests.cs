@@ -75,6 +75,7 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     [InlineData("Alta")]
     [InlineData("high")]
     [InlineData("")]
+    [InlineData("urgente")]
     public async Task Invalid_priority_on_create_is_rejected_and_not_saved(string priority)
     {
         var client = factory.CreateClient();
