@@ -24,4 +24,5 @@ dotnet run --project src/CtbProva.Api
 
 I dati stanno in memoria e si perdono al riavvio: è un progetto di prova.
 
+prova D55
 prova D56: riga cambiata su e2e-base
