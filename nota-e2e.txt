@@ -1,0 +1,1 @@
+Commit su e2e-base per la prova del merge a metà thread (runbook 30.3).
