@@ -6,13 +6,16 @@ Piccola Web API .NET 10 per la prova end-to-end di claude-teams-bridge. Gestisce
 
 ## Endpoint
 
+Ogni cosa da fare ha `id`, `title`, `done` e `priority` (`bassa`, `media` o `alta`, minuscoli).
+
 | Metodo | Percorso | Cosa fa |
 | --- | --- | --- |
 | GET | `/api/health` | stato del servizio |
-| GET | `/api/todos` | elenco delle cose da fare |
+| GET | `/api/todos` | elenco delle cose da fare per id; `?priority=alta` filtra su un solo valore, 400 se non ammesso |
 | GET | `/api/todos/{id}` | una cosa da fare, 404 se non esiste |
-| POST | `/api/todos` | crea una cosa da fare (`{ "title": "..." }`), 400 se il titolo è vuoto |
+| POST | `/api/todos` | crea una cosa da fare (`{ "title": "...", "priority": "alta" }`, `priority` facoltativa con default `media`), 400 se il titolo è vuoto o la priorità non è ammessa |
 | POST | `/api/todos/{id}/done` | segna una cosa come fatta |
+| PUT | `/api/todos/{id}/priority` | cambia la priorità (`{ "priority": "bassa" }`), 404 se non esiste, 400 se la priorità manca o non è ammessa |
 
 ## Comandi
 
