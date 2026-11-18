@@ -81,6 +81,7 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     [InlineData("urgent")]
     [InlineData("1")]
     [InlineData("")]
+    [InlineData("low,high")]
     public async Task Invalid_priority_on_create_is_rejected(string priority)
     {
         var response = await factory.CreateClient().PostAsJsonAsync("/api/todos", new { title = "x", priority });
