@@ -9,7 +9,20 @@ app.UseCors();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapGet("/api/todos", (TodoStore store) => store.All());
+app.MapGet("/api/todos", (string? priority, TodoStore store) =>
+{
+    if (priority is null)
+    {
+        return Results.Ok(store.All());
+    }
+
+    if (!Priorities.IsValid(priority))
+    {
+        return Priorities.Invalid();
+    }
+
+    return Results.Ok(store.All().Where(t => t.Priority == priority).ToList());
+});
 
 app.MapGet("/api/todos/{id:int}", (int id, TodoStore store) =>
     store.Find(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
@@ -21,18 +34,49 @@ app.MapPost("/api/todos", (NewTodo input, TodoStore store) =>
         return Results.ValidationProblem(new Dictionary<string, string[]> { ["title"] = ["Il titolo è obbligatorio."] });
     }
 
-    var todo = store.Add(input.Title.Trim());
+    var priority = input.Priority ?? Priorities.Default;
+    if (!Priorities.IsValid(priority))
+    {
+        return Priorities.Invalid();
+    }
+
+    var todo = store.Add(input.Title.Trim(), priority);
     return Results.Created($"/api/todos/{todo.Id}", todo);
 });
 
 app.MapPost("/api/todos/{id:int}/done", (int id, TodoStore store) =>
     store.MarkDone(id) is { } todo ? Results.Ok(todo) : Results.NotFound());
 
+app.MapPut("/api/todos/{id:int}/priority", (int id, PriorityChange input, TodoStore store) =>
+{
+    if (!Priorities.IsValid(input.Priority))
+    {
+        return Priorities.Invalid();
+    }
+
+    return store.SetPriority(id, input.Priority!) is { } todo ? Results.Ok(todo) : Results.NotFound();
+});
+
 app.Run();
 
-public record Todo(int Id, string Title, bool Done);
+public record Todo(int Id, string Title, bool Done, string Priority);
 
-public record NewTodo(string? Title);
+public record NewTodo(string? Title, string? Priority);
+
+public record PriorityChange(string? Priority);
+
+public static class Priorities
+{
+    // JSON values stay Italian by design (decision D3).
+    public static readonly string[] All = ["bassa", "media", "alta"];
+
+    public const string Default = "media";
+
+    public static bool IsValid(string? priority) => priority is not null && All.Contains(priority);
+
+    public static IResult Invalid() =>
+        Results.ValidationProblem(new Dictionary<string, string[]> { ["priority"] = [$"Priority must be one of: {string.Join(", ", All)}."] });
+}
 
 public sealed class TodoStore
 {
@@ -43,9 +87,9 @@ public sealed class TodoStore
 
     public Todo? Find(int id) => _items.TryGetValue(id, out var todo) ? todo : null;
 
-    public Todo Add(string title)
+    public Todo Add(string title, string priority)
     {
-        var todo = new Todo(Interlocked.Increment(ref _lastId), title, false);
+        var todo = new Todo(Interlocked.Increment(ref _lastId), title, false, priority);
         _items[todo.Id] = todo;
         return todo;
     }
@@ -60,6 +104,18 @@ public sealed class TodoStore
         var done = todo with { Done = true };
         _items[id] = done;
         return done;
+    }
+
+    public Todo? SetPriority(int id, string priority)
+    {
+        if (!_items.TryGetValue(id, out var todo))
+        {
+            return null;
+        }
+
+        var updated = todo with { Priority = priority };
+        _items[id] = updated;
+        return updated;
     }
 }
 
