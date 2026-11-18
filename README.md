@@ -28,3 +28,5 @@ I dati stanno in memoria e si perdono al riavvio: è un progetto di prova.
 ## Prova ripubblicazione
 
 18 novembre 2026: Commit fatto prima dell'interruzione del runner.
+
+Commit fatto prima dell'interruzione del runner (secondo tentativo).
