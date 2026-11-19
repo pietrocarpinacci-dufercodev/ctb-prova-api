@@ -82,6 +82,19 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
     }
 
     [Fact]
+    public async Task Non_string_priority_on_create_is_rejected_and_not_stored()
+    {
+        var client = factory.CreateClient();
+        var title = $"invalid-{Guid.NewGuid()}";
+
+        var response = await client.PostAsJsonAsync("/api/todos", new { title, priority = 5 });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var all = await client.GetFromJsonAsync<List<Todo>>("/api/todos");
+        Assert.DoesNotContain(all!, t => t.Title == title);
+    }
+
+    [Fact]
     public async Task Priority_endpoint_updates_only_priority()
     {
         var client = factory.CreateClient();
