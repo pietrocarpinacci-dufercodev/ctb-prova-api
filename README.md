@@ -32,3 +32,5 @@ I dati stanno in memoria e si perdono al riavvio: è un progetto di prova.
 Commit fatto prima dell'interruzione del runner (secondo tentativo).
 
 Ripubblicazione verificata.
+
+Scarto verificato.
