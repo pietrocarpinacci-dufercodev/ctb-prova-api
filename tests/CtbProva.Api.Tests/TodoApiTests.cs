@@ -68,13 +68,16 @@ public class TodoApiTests(WebApplicationFactory<Program> factory) : IClassFixtur
         Assert.Equal("media", (await created.Content.ReadFromJsonAsync<Todo>())!.Priority);
     }
 
-    [Fact]
-    public async Task Invalid_priority_on_create_is_rejected()
+    [Theory]
+    [InlineData("urgente")]
+    [InlineData("")]
+    [InlineData("Alta")]
+    public async Task Invalid_priority_on_create_is_rejected(string priority)
     {
         var client = factory.CreateClient();
         var before = (await client.GetFromJsonAsync<List<Todo>>("/api/todos"))!.Count;
 
-        var response = await client.PostAsJsonAsync("/api/todos", new { title = "pane", priority = "urgente" });
+        var response = await client.PostAsJsonAsync("/api/todos", new { title = "pane", priority });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("\"priority\"", await response.Content.ReadAsStringAsync());
